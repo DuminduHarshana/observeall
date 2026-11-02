@@ -1,0 +1,48 @@
+{{- if .Values.edgeCollector.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "observeall.fullname" . }}-edge-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "observeall.labels" . | nindent 4 }}
+    app.kubernetes.io/component: edge-collector
+spec:
+  selector:
+    matchLabels:
+      {{- include "observeall.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: edge-collector
+  template:
+    metadata:
+      labels:
+        {{- include "observeall.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: edge-collector
+    spec:
+      serviceAccountName: {{ include "observeall.serviceAccountName" . }}
+      containers:
+        - name: edge-collector
+          image: "{{ .Values.edgeCollector.image.repository }}:{{ .Values.edgeCollector.image.tag }}"
+          imagePullPolicy: {{ .Values.edgeCollector.image.pullPolicy }}
+          command:
+            - /otelcol-contrib
+            - --config=/conf/edge-config.yaml
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.edgeCollector.resources | nindent 12 }}
+          volumeMounts:
+            - name: edge-config
+              mountPath: /conf
+      volumes:
+        - name: edge-config
+          configMap:
+            name: {{ include "observeall.fullname" . }}-edge-config
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+{{- end }}

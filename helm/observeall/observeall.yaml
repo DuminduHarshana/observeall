@@ -1,0 +1,10 @@
+name: my-project
+environment: kubernetes
+language: java
+backends:
+    - prometheus+grafana
+signals:
+    - traces
+    - metrics
+    - logs
+sampling: tail

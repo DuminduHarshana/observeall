@@ -1,0 +1,26 @@
+apiVersion: v2
+name: observeall
+description: Universal OpenTelemetry-powered observability platform — any env, any backend
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://github.com/observeall/observeall
+keywords:
+  - opentelemetry
+  - otel
+  - observability
+  - tracing
+  - metrics
+  - logs
+  - prometheus
+  - grafana
+  - datadog
+  - dynatrace
+maintainers:
+  - name: ObserveAll Team
+    email: team@observeall.io
+dependencies:
+  - name: opentelemetry-collector
+    version: "0.95.*"
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    condition: collector.enabled

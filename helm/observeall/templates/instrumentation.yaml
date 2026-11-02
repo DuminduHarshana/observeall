@@ -1,0 +1,50 @@
+{{- if .Values.operator.enabled }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ include "observeall.fullname" . }}-instrumentation
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "observeall.labels" . | nindent 4 }}
+  annotations:
+    # Add this annotation to any namespace to auto-instrument all pods in it:
+    #   kubectl annotate namespace <your-ns> instrumentation.opentelemetry.io/inject-java=observeall/observeall-instrumentation
+spec:
+  exporter:
+    endpoint: http://{{ include "observeall.fullname" . }}-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+  {{- if .Values.operator.instrumentation.java.enabled }}
+  java:
+    image: {{ .Values.operator.instrumentation.java.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://{{ include "observeall.fullname" . }}-collector:4317
+  {{- end }}
+  {{- if .Values.operator.instrumentation.python.enabled }}
+  python:
+    image: {{ .Values.operator.instrumentation.python.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://{{ include "observeall.fullname" . }}-collector:4317
+  {{- end }}
+  {{- if .Values.operator.instrumentation.nodejs.enabled }}
+  nodejs:
+    image: {{ .Values.operator.instrumentation.nodejs.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://{{ include "observeall.fullname" . }}-collector:4317
+  {{- end }}
+  {{- if .Values.operator.instrumentation.dotnet.enabled }}
+  dotnet:
+    image: {{ .Values.operator.instrumentation.dotnet.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://{{ include "observeall.fullname" . }}-collector:4317
+  {{- end }}
+{{- end }}

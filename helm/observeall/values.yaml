@@ -1,0 +1,170 @@
+# =============================================================
+# ObserveAll Helm Chart — values.yaml
+# =============================================================
+
+# Global settings
+global:
+  # Project/service name tag added to all signals
+  projectName: "my-observeall-project"
+  environment: "production"
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+
+# ── Collector Gateway (central fan-out) ─────────────────────
+collector:
+  enabled: true
+  mode: deployment   # deployment | daemonset
+
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.95.0"
+    pullPolicy: IfNotPresent
+
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  service:
+    type: ClusterIP
+    ports:
+      otlpGrpc: 4317
+      otlpHttp: 4318
+      metrics: 8888
+      healthCheck: 13133
+
+  # ── Signal pipelines ──────────────────────────────────────
+  pipelines:
+    traces:
+      enabled: true
+    metrics:
+      enabled: true
+    logs:
+      enabled: true
+
+  # ── Sampling ──────────────────────────────────────────────
+  sampling:
+    # Options: tail | head | always_on | none
+    strategy: tail
+    tailSampling:
+      decisionWait: 10s
+      numTraces: 100000
+      policies:
+        errorPolicy: true       # Sample all error traces
+        slowTraceMs: 500        # Sample traces slower than Xms
+        probabilisticPct: 10    # 10% fallback sampling
+
+# ── Backends ─────────────────────────────────────────────────
+backends:
+
+  # Prometheus Remote Write
+  prometheus:
+    enabled: true
+    endpoint: "http://prometheus:9090/api/v1/write"
+    tls:
+      insecure: true
+
+  # Grafana Cloud
+  grafana:
+    enabled: false
+    endpoint: "https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
+    # Store token in a K8s secret: kubectl create secret generic observeall-grafana --from-literal=token=<base64token>
+    existingSecret: ""
+    secretKey: "token"
+
+  # Datadog
+  datadog:
+    enabled: false
+    site: "datadoghq.com"
+    # Store key in: kubectl create secret generic observeall-datadog --from-literal=api-key=<key>
+    existingSecret: ""
+    secretKey: "api-key"
+
+  # Dynatrace
+  dynatrace:
+    enabled: false
+    endpoint: ""   # https://{env-id}.live.dynatrace.com/api/v2/otlp
+    # Store token in: kubectl create secret generic observeall-dynatrace --from-literal=api-token=<token>
+    existingSecret: ""
+    secretKey: "api-token"
+
+  # New Relic
+  newrelic:
+    enabled: false
+    endpoint: "https://otlp.nr-data.net"
+    existingSecret: ""
+    secretKey: "license-key"
+
+  # Jaeger
+  jaeger:
+    enabled: false
+    endpoint: "http://jaeger:4317"
+    tls:
+      insecure: true
+
+  # Custom OTLP endpoint
+  customOtlp:
+    enabled: false
+    endpoint: ""
+
+# ── Edge Collector (DaemonSet on every node) ─────────────────
+edgeCollector:
+  enabled: false
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.95.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Gateway endpoint for the edge collector to forward to
+  gatewayEndpoint: "observeall-collector:4317"
+
+# ── OTel K8s Operator integration ────────────────────────────
+operator:
+  # Set true if opentelemetry-operator is installed in the cluster
+  enabled: false
+  instrumentation:
+    # Language auto-instrumentation via Instrumentation CRD
+    java:
+      enabled: true
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+    python:
+      enabled: true
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+    nodejs:
+      enabled: true
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+    dotnet:
+      enabled: false
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest
+
+# ── RBAC ─────────────────────────────────────────────────────
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# ── Prometheus Operator integration ──────────────────────────
+serviceMonitor:
+  enabled: false
+  interval: "30s"
+  labels: {}

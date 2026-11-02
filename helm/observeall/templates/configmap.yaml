@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "observeall.fullname" . }}-collector-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "observeall.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    {{- include "observeall.collectorConfig" . | nindent 4 }}
