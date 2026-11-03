@@ -261,7 +261,7 @@ observeall/
 ### 1. Build or Install the CLI
 
 ```bash
-cd /Users/duminduharshana/.gemini/antigravity/scratch/observeall
+cd observeall
 
 # Build binary
 make build
