@@ -502,8 +502,8 @@ make helm-template
 - [x] **Phase 3: Security & Governance**
   - [x] Automatic PII scrubbing processor (`observeall pii --enable`)
   - [x] Zero-code eBPF network instrumentation manifests (`observeall ebpf`)
-- [ ] **Phase 4: AIOps**
-  - [ ] Cross-signal automated root-cause analysis (LLM assisted)
+- [x] **Phase 4: AIOps**
+  - [x] Cross-signal automated root-cause analysis (LLM assisted) (`observeall aiops`)
 
 ---
 

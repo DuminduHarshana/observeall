@@ -151,3 +151,28 @@ func TestServer_GetStatus(t *testing.T) {
 	}
 }
 
+func TestServer_GetAIOpsAnalyze(t *testing.T) {
+	server, _, _ := setupTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/aiops/analyze?scenario=db_exhaustion", nil)
+	rec := httptest.NewRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+
+	var res map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
+		t.Fatalf("invalid json: %v", err)
+	}
+
+	if res["primary_culprit"] == "" {
+		t.Errorf("expected non-empty primary_culprit")
+	}
+	if res["confidence_score"] == 0 {
+		t.Errorf("expected confidence_score > 0")
+	}
+}
+

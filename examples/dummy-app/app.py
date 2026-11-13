@@ -118,6 +118,34 @@ def place_order():
             "trace_id": format(root_span.get_span_context().trace_id, "032x"),
         })
 
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+    """Demonstrates Phase 3 Automatic PII Scrubbing in ObserveAll."""
+    email = request.args.get("email", "customer@example.com")
+    card = request.args.get("card", "4532015893248812")
+    password = request.args.get("password", "secretPassword123")
+    ssn = request.args.get("ssn", "123-45-6789")
+
+    request_counter.add(1, {"endpoint": "/checkout", "status": "200"})
+
+    with tracer.start_as_current_span("checkout_transaction") as span:
+        # Attach raw PII attributes — ObserveAll's transform/pii_scrubber will intercept and redact them
+        span.set_attribute("http.url", f"http://localhost:5050/checkout?email={email}&password={password}&ssn={ssn}")
+        span.set_attribute("db.statement", f"INSERT INTO orders (customer_email, cc_number) VALUES ('{email}', '{card}')")
+        span.set_attribute("user.email", email)
+
+        return jsonify({
+            "status": "order_placed",
+            "message": "PII sent in span attributes (scrubbed to [REDACTED] by ObserveAll)",
+            "sent_pii": {
+                "email": email,
+                "card": card,
+                "password": password,
+                "ssn": ssn,
+            },
+            "scrubbed_by": "ObserveAll transform/pii_scrubber",
+        })
+
 @app.route("/slow")
 def slow_endpoint():
     """Triggers ObserveAll tail-sampling latency threshold (> 500ms)."""

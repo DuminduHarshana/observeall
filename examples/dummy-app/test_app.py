@@ -41,6 +41,12 @@ def test_endpoints():
     assert res.status_code == 500, f"Expected 500, got {res.status_code}"
     print(f"  ✔ Status: {res.status_code}, Preserved: {res.json()['tail_sampling']}")
 
+    # 5. PII Scrubbing (Phase 3: tests credit card, email, password, SSN scrubbing)
+    print("\n▶ Calling GET /checkout (Phase 3 PII Scrubbing verification)")
+    res = requests.get(f"{APP_URL}/checkout?card=4532015893248812&email=alice@company.com&password=secretPassword123&ssn=123-45-6789")
+    assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+    print(f"  ✔ Status: {res.status_code}, PII Scrubber: {res.json()['scrubbed_by']}")
+
     print("\n⏳ Flushing spans and metrics to ObserveAll Collector...")
     time.sleep(3)
 

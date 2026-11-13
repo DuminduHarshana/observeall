@@ -37,6 +37,7 @@ func init() {
 	rootCmd.AddCommand(analyticsCmd)
 	rootCmd.AddCommand(piiCmd)
 	rootCmd.AddCommand(ebpfCmd)
+	rootCmd.AddCommand(aiopsCmd)
 
 	rootCmd.PersistentFlags().String("config", "observeall.yaml", "ObserveAll project config file")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")

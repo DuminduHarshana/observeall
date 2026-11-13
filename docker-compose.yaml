@@ -14,6 +14,12 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
       - "8888:8888"   # Collector metrics
+    environment:
+      - DD_API_KEY=${DD_API_KEY:-dev-key}
+      - DT_API_TOKEN=${DT_API_TOKEN:-dev-token}
+      - DT_ENDPOINT=${DT_ENDPOINT:-http://dynatrace}
+      - GRAFANA_TOKEN=${GRAFANA_TOKEN:-dev-token}
+      - NR_LICENSE_KEY=${NR_LICENSE_KEY:-dev-key}
     depends_on:
       - prometheus
     networks:

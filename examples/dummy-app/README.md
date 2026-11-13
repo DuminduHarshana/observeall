@@ -16,7 +16,11 @@ A practical reference application instrumented with **OpenTelemetry (OTel)** to 
 3. **Tail-Based Sampling**:
    - **Error Preservation (`/error`)**: Simulates 500 exceptions, verifying ObserveAll's `errors-policy` preserves 100% of failed traces.
    - **Latency Threshold (`/slow`)**: Simulates > 500ms operations, verifying ObserveAll's `slow-traces-policy`.
-4. **Enrichment & Pipeline**:
+4. **Phase 3: Automatic PII Scrubbing (`/checkout`)**:
+   - Redacts credit cards, emails, passwords, and SSNs from span attributes and database queries to `[REDACTED]`.
+5. **Phase 3: Zero-Code eBPF Instrumentation**:
+   - Demonstrates kernel-level latency capturing with `beyla-compose.yaml` and `beyla-daemonset.yaml`.
+6. **Enrichment & Pipeline**:
    - Verifies the collector applies global attributes (`deployment.environment=production`, `observeall.version=1.0`) and batches records.
 
 ---

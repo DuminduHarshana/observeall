@@ -106,12 +106,6 @@ exporters:
     tls:
       insecure: true
 
-  # Grafana Cloud OTLP exporter
-  otlp/grafana:
-    endpoint: https://otlp-gateway-prod-us-central-0.grafana.net/otlp
-    headers:
-      Authorization: Basic ${env:GRAFANA_TOKEN}
-
   # Debug exporter — prints signals to stdout (useful for development)
   debug:
     verbosity: basic
@@ -121,15 +115,15 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, tail_sampling, batch, resource, transform/pii_scrubber]
-      exporters: [otlp/grafana, debug]
+      exporters: [debug]
     metrics:
       receivers: [otlp, prometheus]
       processors: [memory_limiter, batch, resource, transform/pii_scrubber]
-      exporters: [prometheusremotewrite, otlp/grafana, debug]
+      exporters: [prometheusremotewrite, debug]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource, transform/pii_scrubber]
-      exporters: [otlp/grafana, debug]
+      exporters: [debug]
 
   telemetry:
     logs:

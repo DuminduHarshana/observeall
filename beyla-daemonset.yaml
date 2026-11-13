@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: beyla-ebpf
+  namespace: observeall
+  labels:
+    app.kubernetes.io/name: beyla
+    app.kubernetes.io/part-of: observeall
+spec:
+  selector:
+    matchLabels:
+      app: beyla
+  template:
+    metadata:
+      labels:
+        app: beyla
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: beyla
+          image: grafana/beyla:latest
+          securityContext:
+            privileged: false
+            capabilities:
+              add:
+                - SYS_ADMIN
+                - NET_ADMIN
+                - SYS_PTRACE
+          env:
+            - name: BEYLA_OPEN_PORT
+              value: "5050"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://observeall.observeall.svc.cluster.local:4317"
+          volumeMounts:
+            - mountPath: /sys/kernel/debug
+              name: debugfs
+              readOnly: true
+            - mountPath: /proc
+              name: proc
+              readOnly: true
+      volumes:
+        - name: debugfs
+          hostPath:
+            path: /sys/kernel/debug
+        - name: proc
+          hostPath:
+            path: /proc

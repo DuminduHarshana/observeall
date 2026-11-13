@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/observeall/observeall/internal/aiops"
 	"github.com/observeall/observeall/internal/analytics"
 	"github.com/observeall/observeall/internal/config"
 	"gopkg.in/yaml.v3"
@@ -46,6 +48,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/pipeline", s.handlePipeline)
 	s.mux.HandleFunc("/api/pipeline/route", s.handleRoute)
 	s.mux.HandleFunc("/api/status", s.handleStatus)
+	s.mux.HandleFunc("/api/aiops/analyze", s.handleAIOps)
 }
 
 // Handler returns the underlying http.Handler (useful for httptest).
@@ -178,6 +181,64 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (s *Server) handleAIOps(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	scenario := r.URL.Query().Get("scenario")
+	if scenario == "" {
+		scenario = "db_exhaustion"
+	}
+
+	analyzer := aiops.NewAnalyzer("gemini-1.5-pro / claude-3.5-sonnet")
+	inc := aiops.Incident{
+		ID:        fmt.Sprintf("inc-%d", time.Now().Unix()%10000),
+		Service:   "dummy-shop-service",
+		Trigger:   "Automated Anomaly Detection",
+		Timestamp: time.Now(),
+		Severity:  aiops.SeverityCritical,
+		Spans: []aiops.TraceSpan{
+			{
+				TraceID:      "trace-db-7102cd34",
+				SpanID:       "span-db-01",
+				Name:         "charge_payment",
+				Service:      "dummy-shop-service",
+				Status:       "ERROR",
+				ErrorMessage: "Timeout waiting for idle database connection from pool",
+			},
+		},
+		Metrics: []aiops.MetricAnomaly{
+			{
+				MetricName:    "dummy_requests_total{status=\"500\"}",
+				BaselineValue: 0.0,
+				ObservedValue: 42.0,
+				DeltaPercent:  4200.0,
+				Unit:          "requests",
+			},
+		},
+		Logs: []aiops.LogRecord{
+			{
+				Timestamp: time.Now(),
+				Level:     "ERROR",
+				Body:      "ConnectionRefusedError: Max connection pool capacity (100) reached",
+			},
+		},
+	}
+
+	result, err := analyzer.Analyze(inc)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 // Start runs the HTTP server listening on the provided address.
