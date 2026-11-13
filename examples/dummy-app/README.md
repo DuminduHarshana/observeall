@@ -33,14 +33,14 @@ docker compose up -d
 ### 2. Start the Dummy Application
 ```bash
 # Using the installed Python environment
-/tmp/test-otel-venv/bin/python examples/dummy-app/app.py
+./examples/dummy-app/.venv/bin/python examples/dummy-app/app.py
 ```
 App starts on `http://localhost:5050`.
 
 ### 3. Run the Automated Test Suite
 In a separate terminal:
 ```bash
-/tmp/test-otel-venv/bin/python examples/dummy-app/test_app.py
+./examples/dummy-app/.venv/bin/python examples/dummy-app/test_app.py
 ```
 
 ### 4. Observe the Signals in Collector Logs

@@ -66,12 +66,51 @@ processors:
         probabilistic:
           sampling_percentage: 10
 
+  # PII scrubbing — redacts sensitive data in spans, logs, and metrics
+  transform/pii_scrubber:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - replace_pattern(attributes["http.url"], "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b", "[REDACTED]")
+          - replace_pattern(attributes["db.statement"], "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b", "[REDACTED]")
+          - replace_pattern(attributes["rpc.request.metadata.authorization"], "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b", "[REDACTED]")
+          - replace_pattern(attributes["http.url"], "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED]")
+          - replace_pattern(attributes["db.statement"], "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED]")
+          - replace_pattern(attributes["rpc.request.metadata.authorization"], "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED]")
+          - replace_pattern(attributes["http.url"], "(?i)(password|passwd|pwd|secret|token|api_key)\\s*[=:]\\s*\\S+", "[REDACTED]")
+          - replace_pattern(attributes["db.statement"], "(?i)(password|passwd|pwd|secret|token|api_key)\\s*[=:]\\s*\\S+", "[REDACTED]")
+          - replace_pattern(attributes["rpc.request.metadata.authorization"], "(?i)(password|passwd|pwd|secret|token|api_key)\\s*[=:]\\s*\\S+", "[REDACTED]")
+          - replace_pattern(attributes["http.url"], "\\b\\d{3}-\\d{2}-\\d{4}\\b", "[REDACTED]")
+          - replace_pattern(attributes["db.statement"], "\\b\\d{3}-\\d{2}-\\d{4}\\b", "[REDACTED]")
+          - replace_pattern(attributes["rpc.request.metadata.authorization"], "\\b\\d{3}-\\d{2}-\\d{4}\\b", "[REDACTED]")
+    log_statements:
+      - context: log
+        statements:
+          - replace_pattern(body, "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b", "[REDACTED]")
+          - replace_pattern(body, "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED]")
+          - replace_pattern(body, "(?i)(password|passwd|pwd|secret|token|api_key)\\s*[=:]\\s*\\S+", "[REDACTED]")
+          - replace_pattern(body, "\\b\\d{3}-\\d{2}-\\d{4}\\b", "[REDACTED]")
+    metric_statements:
+      - context: datapoint
+        statements:
+          - replace_pattern(attributes["label"], "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b", "[REDACTED]")
+          - replace_pattern(attributes["label"], "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED]")
+          - replace_pattern(attributes["label"], "(?i)(password|passwd|pwd|secret|token|api_key)\\s*[=:]\\s*\\S+", "[REDACTED]")
+          - replace_pattern(attributes["label"], "\\b\\d{3}-\\d{2}-\\d{4}\\b", "[REDACTED]")
+
 exporters:
   # Prometheus Remote Write exporter
   prometheusremotewrite:
     endpoint: http://prometheus:9090/api/v1/write
     tls:
       insecure: true
+
+  # Grafana Cloud OTLP exporter
+  otlp/grafana:
+    endpoint: https://otlp-gateway-prod-us-central-0.grafana.net/otlp
+    headers:
+      Authorization: Basic ${env:GRAFANA_TOKEN}
 
   # Debug exporter — prints signals to stdout (useful for development)
   debug:
@@ -81,16 +120,16 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, tail_sampling, batch, resource]
-      exporters: [debug]
+      processors: [memory_limiter, tail_sampling, batch, resource, transform/pii_scrubber]
+      exporters: [otlp/grafana, debug]
     metrics:
       receivers: [otlp, prometheus]
-      processors: [memory_limiter, batch, resource]
-      exporters: [prometheusremotewrite, debug]
+      processors: [memory_limiter, batch, resource, transform/pii_scrubber]
+      exporters: [prometheusremotewrite, otlp/grafana, debug]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [debug]
+      processors: [memory_limiter, batch, resource, transform/pii_scrubber]
+      exporters: [otlp/grafana, debug]
 
   telemetry:
     logs:

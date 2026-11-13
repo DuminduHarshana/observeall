@@ -488,20 +488,20 @@ make helm-template
 
 ## 🗺️ Roadmap
 
-- [x] **Phase 1: Foundation (Current)**
+- [x] **Phase 1: Foundation**
   - [x] OpenTelemetry Collector baseline with dynamic YAML generation
   - [x] Multi-backend exporter fan-out (Prometheus, Grafana, Datadog, Dynatrace, New Relic, Jaeger)
   - [x] Developer CLI (`init`, `connect`, `status`, `generate`)
   - [x] Production Helm chart with HPA, RBAC, DaemonSet, and OTel Operator CRDs
   - [x] Docker Compose local stack with Prometheus, Grafana, and Jaeger
   - [x] Unit test suite with 84%+ statement coverage & GitHub Actions CI
-- [ ] **Phase 2: SaaS Control Plane**
-  - [ ] Web UI for visual drag-and-drop routing pipelines
-  - [ ] Real-time ingestion rate & cost breakdown per service
-  - [ ] Dynamic GitOps push for collector configuration updates
-- [ ] **Phase 3: Security & Governance**
-  - [ ] Automatic PII scrubbing processor (passwords, credit cards, emails)
-  - [ ] Zero-code eBPF network instrumentation for non-JVM/interpreted binaries
+- [x] **Phase 2: SaaS Control Plane**
+  - [x] Web UI for visual drag-and-drop routing pipelines (`observeall serve`)
+  - [x] Real-time ingestion rate & cost breakdown per service (`observeall analytics`)
+  - [x] Dynamic GitOps push for collector configuration updates (`observeall watch` / `sync`)
+- [x] **Phase 3: Security & Governance**
+  - [x] Automatic PII scrubbing processor (`observeall pii --enable`)
+  - [x] Zero-code eBPF network instrumentation manifests (`observeall ebpf`)
 - [ ] **Phase 4: AIOps**
   - [ ] Cross-signal automated root-cause analysis (LLM assisted)
 

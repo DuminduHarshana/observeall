@@ -31,6 +31,12 @@ func init() {
 	rootCmd.AddCommand(connectCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(watchCmd)
+	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(analyticsCmd)
+	rootCmd.AddCommand(piiCmd)
+	rootCmd.AddCommand(ebpfCmd)
 
 	rootCmd.PersistentFlags().String("config", "observeall.yaml", "ObserveAll project config file")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")

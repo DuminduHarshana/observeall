@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/observeall/observeall/internal/pii"
 )
 
 // GenerateCollectorConfig builds a full OTel Collector YAML pipeline config
@@ -110,6 +112,14 @@ func processorBlock(proj Project) string {
     sampling_percentage: 1
 
 `)
+	}
+
+	if proj.PIIScrubbing {
+		piiCfg := pii.PIIConfig{
+			Enabled:     true,
+			Replacement: proj.PIIReplacement,
+		}
+		sb.WriteString(pii.GeneratePIIScrubberYAML(piiCfg))
 	}
 
 	return sb.String()
@@ -269,6 +279,11 @@ func serviceBlock(proj Project) string {
 		samplerProcessor = "probabilistic_sampler, "
 	}
 
+	piiProcessor := ""
+	if proj.PIIScrubbing {
+		piiProcessor = ", transform/pii_scrubber"
+	}
+
 	formatExporters := func(list []string) string {
 		all := append(list, "debug")
 		return strings.Join(all, ", ")
@@ -277,25 +292,25 @@ func serviceBlock(proj Project) string {
 	if hasTraces {
 		sb.WriteString(fmt.Sprintf(`    traces:
       receivers: [otlp]
-      processors: [memory_limiter, %sbatch, resource]
+      processors: [memory_limiter, %sbatch, resource%s]
       exporters: [%s]
-`, samplerProcessor, formatExporters(traceExporters)))
+`, samplerProcessor, piiProcessor, formatExporters(traceExporters)))
 	}
 
 	if hasMetrics {
 		sb.WriteString(fmt.Sprintf(`    metrics:
       receivers: [otlp, prometheus]
-      processors: [memory_limiter, batch, resource]
+      processors: [memory_limiter, batch, resource%s]
       exporters: [%s]
-`, formatExporters(metricExporters)))
+`, piiProcessor, formatExporters(metricExporters)))
 	}
 
 	if hasLogs {
 		sb.WriteString(fmt.Sprintf(`    logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
+      processors: [memory_limiter, batch, resource%s]
       exporters: [%s]
-`, formatExporters(logExporters)))
+`, piiProcessor, formatExporters(logExporters)))
 	}
 
 	sb.WriteString(`

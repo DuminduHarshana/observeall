@@ -2,9 +2,12 @@ name: mine
 environment: kubernetes
 language: java
 backends:
-    - prometheus+grafana
+    - prometheus
+    - grafana
 signals:
     - traces
     - metrics
     - logs
 sampling: tail
+pii_scrubbing: true
+pii_replacement: '[REDACTED]'

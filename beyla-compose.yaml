@@ -1,0 +1,24 @@
+# =============================================================
+# ObserveAll — Grafana Beyla eBPF Auto-Instrumentation
+# Captures HTTP/gRPC traffic without app changes or language agents
+# =============================================================
+version: "3.9"
+
+services:
+  beyla:
+    image: grafana/beyla:latest
+    container_name: beyla
+    restart: unless-stopped
+    pid: "host"
+    network_mode: "host"
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+      - SYS_PTRACE
+    environment:
+      - BEYLA_OPEN_PORT=5050
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - BEYLA_PRINT_TRACES=false
+    volumes:
+      - /sys/kernel/debug:/sys/kernel/debug:ro
+      - /proc:/proc:ro

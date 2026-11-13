@@ -17,6 +17,8 @@ coverage.out
 
 # Build artifacts
 dist/
+.venv/
+examples/**/.venv/
 
 # IDE
 .idea/
